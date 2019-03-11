@@ -55,7 +55,7 @@ impl Generator {
                 shape: MapShape::Square,
                 corridor_width: 2,
                 corridor_height: 2,
-                corridor_errantness: 0.75,
+                corridor_errantness: 0.5,
                 margins: (2, 1, 1, 1)
                 // TODO: Add a corridor_margin(u8, u8, u8, u8)
             },
@@ -140,7 +140,7 @@ impl Generator {
             }
         }
         // Place walls
-        place_walls(&mut cell_matrix);
+        // place_walls(&mut cell_matrix);
         'suitable: loop {
             match found_suitable_corridor_location(
                 &cell_matrix,
@@ -162,7 +162,7 @@ impl Generator {
             };
         }
 
-        place_walls(&mut cell_matrix);
+        // place_walls(&mut cell_matrix);
         print_map(cell_matrix);
         return Map { rooms: room_vector };
     }
@@ -219,10 +219,16 @@ fn found_suitable_corridor_location(
     width: u8,
     height: u8,
 ) -> Result<(u16, u16), String> {
+    let start_x = thread_rng().gen_range(0, cell_matrix.width);
+    let start_y = thread_rng().gen_range(0, cell_matrix.height);
+
     for y in 0..(cell_matrix.height - (1 + height) as u16) {
         for x in 0..(cell_matrix.width - (1 + width) as u16) {
-            if is_suitable_corridor_location(cell_matrix, x as i32, y as i32, width, height) {
-                return Ok((x, y));
+            let x_pos = (x + start_x) % cell_matrix.width;
+            let y_pos = (y + start_y) % cell_matrix.height;
+
+            if is_suitable_corridor_location(cell_matrix, x_pos as i32, y_pos as i32, width, height) {
+                return Ok((x_pos, y_pos));
             }
         }
     }
@@ -274,7 +280,7 @@ fn traverse_corridor(
     direction: Direction,
 ) {
     let mut direction = match thread_rng().gen::<f32>() {
-        x if x > 0.9 => Direction::rand(),
+        x if x > 0.75 => Direction::rand(),
         _ => direction,
     };
     // let mut direction = direction;
