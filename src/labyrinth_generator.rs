@@ -1,4 +1,6 @@
 use crate::cell_matrix::{Cell, CellKind, CellMatrix};
+use crate::map_generator::print_map;
+
 use rand::prelude::ThreadRng;
 use rand::thread_rng;
 use rand::Rng;
@@ -99,7 +101,8 @@ impl LabyrinthGenerator {
             self.corridor_width as u16,
             self.corridor_height as u16,
         );
-        // let mut direction_pool = vec![Direction::E, Direction::N, Direction::S, Direction::W];
+
+        let mut direction_pool = vec![Direction::E, Direction::N, Direction::S, Direction::W];
         for _ in 0..3 {
             match direction {
                 Direction::N => {
@@ -153,10 +156,13 @@ impl LabyrinthGenerator {
                     }
                 }
             }
-            // let idx = direction_pool.iter().position(|d| *d == direction).unwrap();
-            // direction_pool.remove(idx);
-            // direction = direction_pool[self.rng.ra];
-            direction = direction.turn_clockwise();
+            let idx = direction_pool.iter().position(|d| *d == direction).unwrap();
+            direction_pool.remove(idx);
+            if (direction_pool.len() == 1) {
+                direction = direction_pool[0];
+            } else {
+                direction = direction_pool[self.rng.gen_range(0, direction_pool.len()) as usize];
+            }
         }
     }
 }

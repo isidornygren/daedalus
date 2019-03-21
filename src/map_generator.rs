@@ -13,6 +13,7 @@ const PI_2: f32 = 3.141592 * 2f32;
 
 pub struct Map {
     pub rooms: Vec<Room>,
+    pub cell_matrix: CellMatrix
 }
 
 pub enum MapShape {
@@ -49,14 +50,14 @@ impl Generator {
         return Generator {
             options: GeneratorOptions {
                 width: 64,
-                height: 64,
+                height: 32,
                 room_min: (4, 4),
                 room_max: (8, 8),
-                iterations: 0,
+                iterations: 64,
                 shape: MapShape::Square,
-                corridor_width: 4,
-                corridor_height: 4,
-                corridor_errantness: 0.75,
+                corridor_width: 2,
+                corridor_height: 2,
+                corridor_errantness: 0.5,
                 margins: (1, 3), // (x, y)
             },
         };
@@ -64,6 +65,10 @@ impl Generator {
     pub fn size(mut self, width: u16, height: u16) -> Self {
         self.options.width = width;
         self.options.height = height;
+        return self;
+    }
+    pub fn iterations(mut self, iterations: u32) -> Self {
+        self.options.iterations = iterations;
         return self;
     }
     pub fn room_size(mut self, min: (u16, u16), max: (u16, u16)) -> Self {
@@ -153,8 +158,7 @@ impl Generator {
         )
         .generate();
         // place_walls(&mut cell_matrix);
-        print_map(&cell_matrix);
-        return Map { rooms: room_vector };
+        return Map { rooms: room_vector, cell_matrix };
     }
 }
 fn is_within_circle_shape(a: &Room, radius: u16) -> bool {
