@@ -2,7 +2,7 @@ extern crate rand;
 use rand::thread_rng;
 use rand::Rng;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Direction {
     N,
     E,

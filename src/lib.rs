@@ -1,8 +1,9 @@
 extern crate rand;
 
-mod map_generator;
 mod cell_matrix;
-mod room;
 mod direction;
+mod labyrinth_generator;
+mod map_generator;
+mod room;
 
 pub use crate::map_generator::Generator;
