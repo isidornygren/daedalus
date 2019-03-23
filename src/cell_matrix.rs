@@ -4,14 +4,24 @@ pub enum CellKind {
     SolidRock, // Solid rock are unbreakable rocks, e.g outside of the map
     Wall,
     // Room contains the index of the room in the room vector.
-    Room,
+    Room(usize),
     Corridor,
     Perimeter(u8), // how close it is to a wall
+}
+
+impl CellKind {
+    pub fn is_room(&self) -> bool {
+        match self {
+            CellKind::Room(x) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
 pub struct Cell {
     pub kind: CellKind,
+
 }
 
 pub struct CellMatrix {

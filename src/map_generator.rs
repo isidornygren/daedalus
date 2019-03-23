@@ -8,6 +8,7 @@ use crate::labyrinth_generator::LabyrinthGenerator;
 use crate::room::Room;
 
 use std::cmp;
+use std::mem;
 
 const PI_2: f32 = 3.141592 * 2f32;
 
@@ -57,7 +58,7 @@ impl Generator {
                 shape: MapShape::Square,
                 corridor_width: 2,
                 corridor_height: 2,
-                corridor_errantness: 0.5,
+                corridor_errantness: 0.75,
                 margins: (1, 3), // (x, y)
             },
         };
@@ -134,14 +135,14 @@ impl Generator {
             }
         }
         // Add all the newly created rooms to the cell vector
-        for room in room_vector.iter() {
+        for (idx, room) in room_vector.iter().enumerate() {
             for x in room.x..(room.x + room.width) {
                 for y in room.y..(room.y + room.height) {
                     cell_matrix.set(
                         x,
                         y,
                         Cell {
-                            kind: CellKind::Room,
+                            kind: CellKind::Room(idx),
                         },
                     )
                 }
@@ -180,7 +181,7 @@ pub fn print_map(cell_matrix: &CellMatrix) {
             print!("\n");
         }
         match cell.kind {
-            CellKind::Room => print!("R"),
+            CellKind::Room(_) => print!("R"),
             CellKind::Corridor => print!("C"),
             CellKind::Wall => print!("W"),
             _ => print!(" "),
@@ -192,7 +193,7 @@ fn place_walls(cell_matrix: &mut CellMatrix) {
     // Force place walls, don't care what's underneath really
     for y in 0..(cell_matrix.height - 1) {
         for x in 0..(cell_matrix.width - 1) {
-            if (cell_matrix.get(x as i32, y as i32 + 1).kind == CellKind::Room
+            if (cell_matrix.get(x as i32, y as i32 + 1).kind.is_room()
                 || cell_matrix.get(x as i32, y as i32 + 1).kind == CellKind::Corridor)
                 && cell_matrix.get(x as i32, y as i32).kind == CellKind::Rock
             {
