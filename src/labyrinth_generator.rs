@@ -1,5 +1,5 @@
-use crate::cell_matrix::{Cell, CellKind, CellMatrix};
-use crate::map_generator::print_map;
+use crate::cell_matrix::{Cell, CellMatrix};
+use crate::room::Corridor;
 
 use rand::prelude::ThreadRng;
 use rand::thread_rng;
@@ -33,16 +33,20 @@ impl LabyrinthGenerator {
             rng: thread_rng(),
         };
     }
-    pub fn generate(mut self) -> CellMatrix {
+    pub fn generate(mut self) -> (CellMatrix, Vec<Corridor>) {
+        let mut corridor_vector: Vec<Corridor> = vec![];
         'suitable: loop {
             match self.find_suitable_corridor_location() {
                 Ok((x, y)) => {
-                    self.traverse_corridor(x, y, Direction::rand());
+                    corridor_vector.push(Corridor {
+                        section: self.cell_matrix.new_section(),
+                    });
+                    self.traverse_corridor(x, y, Direction::rand(), corridor_vector.len() - 1);
                 }
                 Err(_) => break 'suitable,
             };
         }
-        return self.cell_matrix;
+        return (self.cell_matrix, corridor_vector);
     }
 
     fn find_suitable_corridor_location(&mut self) -> Result<(u16, u16), String> {
@@ -85,6 +89,7 @@ impl LabyrinthGenerator {
         y: u16,
         // horizontal / vertical
         direction: Direction,
+        corridor_index: usize,
     ) {
         let mut direction = match thread_rng().gen::<f32>() {
             x if x > self.corridor_errantness => Direction::rand(),
@@ -93,9 +98,7 @@ impl LabyrinthGenerator {
         // Start the labyrinth algorithm here
         // This just sets a corridor piece at the starting location
         self.cell_matrix.set_rect(
-            Cell {
-                kind: CellKind::Corridor,
-            },
+            Cell::Corridor(corridor_index),
             x as u16,
             y as u16,
             self.corridor_width as u16,
@@ -114,7 +117,7 @@ impl LabyrinthGenerator {
                         1,
                         (self.margins.0, self.margins.1, self.margins.0, 0),
                     ) {
-                        self.traverse_corridor(x, y - 1, direction.clone());
+                        self.traverse_corridor(x, y - 1, direction.clone(), corridor_index);
                     }
                 }
                 Direction::E => {
@@ -127,7 +130,7 @@ impl LabyrinthGenerator {
                         self.corridor_height,
                         (0, self.margins.1, self.margins.0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x + 1, y, direction.clone());
+                        self.traverse_corridor(x + 1, y, direction.clone(), corridor_index);
                     }
                 }
                 Direction::S => {
@@ -140,7 +143,7 @@ impl LabyrinthGenerator {
                         1,
                         (self.margins.0, 0, self.margins.0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x, y + 1, direction.clone());
+                        self.traverse_corridor(x, y + 1, direction.clone(), corridor_index);
                     }
                 }
                 Direction::W => {
@@ -152,7 +155,7 @@ impl LabyrinthGenerator {
                         self.corridor_height,
                         (self.margins.0, self.margins.1, 0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x - 1, y, direction.clone());
+                        self.traverse_corridor(x - 1, y, direction.clone(), corridor_index);
                     }
                 }
             }
@@ -186,17 +189,13 @@ fn is_suitable_corridor_location(
     if margin_rect
         .cell_vector
         .iter()
-        .any(|c| c.kind != CellKind::SolidRock && c.kind != CellKind::Rock)
+        .any(|c| *c != Cell::SolidRock && !c.is_rock())
     {
         return false;
     }
     // Check the inner rectangle as well
     let cell_rect = cell_matrix.get_rect(x, y, width as u16, height as u16);
-    if cell_rect
-        .cell_vector
-        .iter()
-        .any(|c| c.kind != CellKind::Rock)
-    {
+    if cell_rect.cell_vector.iter().any(|c| !c.is_rock()) {
         return false;
     }
     return true;

@@ -3,5 +3,6 @@ extern crate daedalus;
 use daedalus::Generator;
 
 fn main() {
-    Generator::new().generate();
+    let map = Generator::new().generate();
+    print!("{}", map.cell_matrix);
 }
