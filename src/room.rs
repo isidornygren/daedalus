@@ -1,11 +1,11 @@
-use crate::sections::Sectionable;
+use crate::sections::Section;
 
 pub struct Room {
     pub width: u16,
     pub height: u16,
     pub x: u16,
     pub y: u16,
-    pub section: u16,
+    pub section: Section,
 }
 
 impl Room {
@@ -17,24 +17,6 @@ impl Room {
     }
 }
 
-impl Sectionable for Room {
-    fn set_section(&mut self, section: u16) {
-        self.section = section;
-    }
-    fn get_section(&self) -> u16 {
-        return self.section;
-    }
-}
-
 pub struct Corridor {
-    pub section: u16,
-}
-
-impl Sectionable for Corridor {
-    fn set_section(&mut self, section: u16) {
-        self.section = section;
-    }
-    fn get_section(&self) -> u16 {
-        return self.section;
-    }
+    pub section: Section,
 }

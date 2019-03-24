@@ -1,5 +1,6 @@
 use crate::cell_matrix::{Cell, CellMatrix};
 use crate::room::Corridor;
+use crate::sections::Section;
 
 use rand::prelude::ThreadRng;
 use rand::thread_rng;
@@ -39,7 +40,7 @@ impl LabyrinthGenerator {
             match self.find_suitable_corridor_location() {
                 Ok((x, y)) => {
                     corridor_vector.push(Corridor {
-                        section: self.cell_matrix.new_section(),
+                        section: Section::new(self.cell_matrix.new_section()),
                     });
                     self.traverse_corridor(x, y, Direction::rand(), corridor_vector.len() - 1);
                 }

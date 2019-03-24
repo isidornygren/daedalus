@@ -1,6 +1,7 @@
 use crate::cell_matrix::{Cell, CellMatrix};
 use crate::map_generator::MapShape;
 use crate::room::Room;
+use crate::sections::Section;
 
 use rand::thread_rng;
 use rand::Rng;
@@ -60,7 +61,7 @@ pub fn generate_rooms(
             height: room_height,
             x,
             y,
-            section: cell_matrix.new_section(),
+            section: Section::new(cell_matrix.new_section()),
         };
         if !room_vector.iter().any(|r| r.collides_with(&room, margins)) {
             room_vector.push(room);

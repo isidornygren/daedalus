@@ -30,12 +30,12 @@ fn main() {
     let wallpixel: Pixel = Pixel::new(0, 0, 0);
 
     let map = Generator::new()
-        .room_size((4, 4), (16, 16))
-        .size(64, 64)
-        .margins(1, 1)
-        .corridor_size(1, 1)
+        .room_size((16, 16), (32, 32))
+        .size(256, 256)
+        .margins(1, 3)
+        .corridor_size(8, 8)
         .iterations(64)
-        .corridor_errantness(0.75)
+        .corridor_errantness(0.5)
         .generate();
     let mut img = Image::new(map.cell_matrix.width as u32, map.cell_matrix.height as u32);
     for (cell, x, y) in map.cell_matrix.iter_enumerate() {
@@ -43,12 +43,12 @@ fn main() {
             Cell::Room(idx) => img.set_pixel(
                 x.into(),
                 y.into(),
-                get_section_color(map.rooms[idx].section * 4),
+                get_section_color(map.rooms[idx].section.get_id() * 4),
             ),
             Cell::Corridor(idx) => img.set_pixel(
                 x.into(),
                 y.into(),
-                get_section_color(map.corridors[idx].section * 32),
+                get_section_color(map.corridors[idx].section.get_id() * 32),
             ),
             Cell::Rock(h, v) => img.set_pixel(
                 x.into(),
@@ -57,6 +57,17 @@ fn main() {
             ),
             _ => img.set_pixel(x.into(), y.into(), wallpixel),
         };
+    }
+    // Paint all sections
+    for room in map.rooms.iter() {
+        for connection in room.section.get_connections().iter() {
+            let val = (connection.3 * 255f32) as u8;
+            img.set_pixel(
+                connection.0.into(),
+                connection.1.into(),
+                Pixel::new(val, val, val),
+            );
+        }
     }
     img.save("print.bmp").unwrap();
 }
