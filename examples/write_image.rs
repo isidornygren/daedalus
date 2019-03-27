@@ -30,12 +30,12 @@ fn main() {
     let wallpixel: Pixel = Pixel::new(0, 0, 0);
 
     let map = Generator::new()
-        .room_size((16, 16), (32, 32))
-        .size(256, 256)
+        .room_size((4, 4), (16, 16))
+        .size(128, 128)
         .margins(1, 3)
-        .corridor_size(8, 8)
+        .corridor_size(3, 3)
         .iterations(64)
-        .corridor_errantness(0.5)
+        .corridor_errantness(0.75)
         .generate();
     let mut img = Image::new(map.cell_matrix.width as u32, map.cell_matrix.height as u32);
     for (cell, x, y) in map.cell_matrix.iter_enumerate() {
