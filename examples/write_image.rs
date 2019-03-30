@@ -33,7 +33,7 @@ fn main() {
     let map = Generator::new()
         .room_size((4, 4), (16, 16))
         .size(64, 64)
-        .margins(3, 3)
+        .margins(4, 4)
         .corridor_size(2, 2)
         .iterations(64)
         .corridor_errantness(0.95)
