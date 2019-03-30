@@ -1,14 +1,7 @@
-use crate::cell_matrix::{Cell, CellMatrix};
+use crate::cell_matrix::{Cell, Map};
 use crate::labyrinth_generator::LabyrinthGenerator;
-use crate::room::{Corridor, Room};
 use crate::room_generator::generate_rooms;
 use crate::sections::SectionMerger;
-
-pub struct Map {
-    pub rooms: Vec<Room>,
-    pub corridors: Vec<Corridor>,
-    pub cell_matrix: CellMatrix,
-}
 
 pub enum MapShape {
     Square,
@@ -87,19 +80,18 @@ impl Generator {
     }
     pub fn generate(self) -> Map {
         let options = self.options;
-        let mut cell_matrix =
-            CellMatrix::new(options.width, options.height, Cell::Rock(false, false));
+        let mut map = Map::new(options.width, options.height, Cell::Rock(false, false));
 
-        let room_vector = generate_rooms(
-            &mut cell_matrix,
+        generate_rooms(
+            &mut map,
             options.room_min,
             options.room_max,
             options.margins,
             options.iterations,
             options.shape,
         );
-        let (cell_matrix, corridor_vector) = LabyrinthGenerator::new(
-            cell_matrix,
+        let map = LabyrinthGenerator::new(
+            map,
             options.corridor_width,
             options.corridor_height,
             options.corridor_errantness,
@@ -108,11 +100,6 @@ impl Generator {
         .generate();
 
         // place_walls(&mut cell_matrix);
-        let map = Map {
-            rooms: room_vector,
-            corridors: corridor_vector,
-            cell_matrix,
-        };
         return SectionMerger::new(
             map,
             options.margins,

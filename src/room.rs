@@ -1,11 +1,11 @@
-use crate::sections::Section;
+use crate::sections::{Section, Sectionable};
 
 pub struct Room {
     pub width: u16,
     pub height: u16,
     pub x: u16,
     pub y: u16,
-    pub section: Section,
+    pub section_id: usize,
 }
 
 impl Room {
@@ -18,5 +18,5 @@ impl Room {
 }
 
 pub struct Corridor {
-    pub section: Section,
+    pub section_id: usize,
 }

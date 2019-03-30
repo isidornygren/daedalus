@@ -1,4 +1,4 @@
-use crate::cell_matrix::{Cell, CellMatrix};
+use crate::cell_matrix::{Cell, Map};
 use crate::room::Corridor;
 use crate::sections::Section;
 
@@ -9,7 +9,7 @@ use rand::Rng;
 use crate::direction::Direction;
 
 pub struct LabyrinthGenerator {
-    cell_matrix: CellMatrix,
+    map: Map,
     corridor_width: u8,
     corridor_height: u8,
     corridor_errantness: f32,
@@ -19,14 +19,14 @@ pub struct LabyrinthGenerator {
 
 impl LabyrinthGenerator {
     pub fn new(
-        cell_matrix: CellMatrix,
+        map: Map,
         corridor_width: u8,
         corridor_height: u8,
         corridor_errantness: f32,
         margins: (u8, u8),
     ) -> LabyrinthGenerator {
         return LabyrinthGenerator {
-            cell_matrix,
+            map,
             corridor_width,
             corridor_height,
             corridor_errantness,
@@ -34,33 +34,31 @@ impl LabyrinthGenerator {
             rng: thread_rng(),
         };
     }
-    pub fn generate(mut self) -> (CellMatrix, Vec<Corridor>) {
-        let mut corridor_vector: Vec<Corridor> = vec![];
+    pub fn generate(mut self) -> Map {
+        // let mut corridor_vector: Vec<Corridor> = vec![];
         'suitable: loop {
             match self.find_suitable_corridor_location() {
                 Ok((x, y)) => {
-                    corridor_vector.push(Corridor {
-                        section: Section::new(self.cell_matrix.new_section()),
-                    });
-                    self.traverse_corridor(x, y, Direction::rand(), corridor_vector.len() - 1);
+                    let idx = self.map.add_corridor();
+                    self.traverse_corridor(x, y, Direction::rand(), idx);
                 }
                 Err(_) => break 'suitable,
             };
         }
-        return (self.cell_matrix, corridor_vector);
+        return self.map;
     }
 
     fn find_suitable_corridor_location(&mut self) -> Result<(u16, u16), String> {
-        let start_x = self.rng.gen_range(0, self.cell_matrix.width);
-        let start_y = self.rng.gen_range(0, self.cell_matrix.height);
+        let start_x = self.rng.gen_range(0, self.map.width);
+        let start_y = self.rng.gen_range(0, self.map.height);
 
-        for y in 0..(self.cell_matrix.height - (1 + self.corridor_height) as u16) {
-            for x in 0..(self.cell_matrix.width - (1 + self.corridor_width) as u16) {
-                let x_pos = (x + start_x) % self.cell_matrix.width;
-                let y_pos = (y + start_y) % self.cell_matrix.height;
+        for y in 0..(self.map.height - (1 + self.corridor_height) as u16) {
+            for x in 0..(self.map.width - (1 + self.corridor_width) as u16) {
+                let x_pos = (x + start_x) % self.map.width;
+                let y_pos = (y + start_y) % self.map.height;
 
                 if is_suitable_corridor_location(
-                    &self.cell_matrix,
+                    &self.map,
                     x_pos as i32,
                     y_pos as i32,
                     self.corridor_width,
@@ -98,7 +96,7 @@ impl LabyrinthGenerator {
         };
         // Start the labyrinth algorithm here
         // This just sets a corridor piece at the starting location
-        self.cell_matrix.set_rect(
+        self.map.set_rect(
             Cell::Corridor(corridor_index),
             x as u16,
             y as u16,
@@ -111,7 +109,7 @@ impl LabyrinthGenerator {
             match direction {
                 Direction::N => {
                     if is_suitable_corridor_location(
-                        &self.cell_matrix,
+                        &self.map,
                         x as i32,
                         y as i32 - 1,
                         self.corridor_width,
@@ -124,7 +122,7 @@ impl LabyrinthGenerator {
                 Direction::E => {
                     let x_new = x + self.corridor_width as u16;
                     if is_suitable_corridor_location(
-                        &self.cell_matrix,
+                        &self.map,
                         x_new as i32,
                         y as i32,
                         1,
@@ -137,7 +135,7 @@ impl LabyrinthGenerator {
                 Direction::S => {
                     let y_new = y + self.corridor_height as u16;
                     if is_suitable_corridor_location(
-                        &self.cell_matrix,
+                        &self.map,
                         x as i32,
                         y_new as i32,
                         self.corridor_width,
@@ -149,7 +147,7 @@ impl LabyrinthGenerator {
                 }
                 Direction::W => {
                     if is_suitable_corridor_location(
-                        &self.cell_matrix,
+                        &self.map,
                         x as i32 - 1,
                         y as i32,
                         1,
@@ -172,7 +170,7 @@ impl LabyrinthGenerator {
 }
 
 fn is_suitable_corridor_location(
-    cell_matrix: &CellMatrix,
+    map: &Map,
     x: i32,
     y: i32,
     width: u8,
@@ -181,7 +179,7 @@ fn is_suitable_corridor_location(
     // left, top, right, bottom
     margins: (u8, u8, u8, u8),
 ) -> bool {
-    let margin_rect = cell_matrix.get_rect(
+    let margin_rect = map.get_rect(
         x - margins.0 as i32,
         y - margins.1 as i32,
         width as u16 + (margins.2 + margins.0) as u16,
@@ -195,7 +193,7 @@ fn is_suitable_corridor_location(
         return false;
     }
     // Check the inner rectangle as well
-    let cell_rect = cell_matrix.get_rect(x, y, width as u16, height as u16);
+    let cell_rect = map.get_rect(x, y, width as u16, height as u16);
     if cell_rect.cell_vector.iter().any(|c| !c.is_rock()) {
         return false;
     }

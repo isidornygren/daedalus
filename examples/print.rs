@@ -4,5 +4,5 @@ use daedalus::Generator;
 
 fn main() {
     let map = Generator::new().generate();
-    print!("{}", map.cell_matrix);
+    print!("{}", map);
 }

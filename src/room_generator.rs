@@ -1,4 +1,4 @@
-use crate::cell_matrix::{Cell, CellMatrix};
+use crate::cell_matrix::{Cell, Map};
 use crate::map_generator::MapShape;
 use crate::room::Room;
 use crate::sections::Section;
@@ -23,27 +23,26 @@ fn is_within_circle_shape(a: &Room, radius: u16) -> bool {
 }
 
 pub fn generate_rooms(
-    cell_matrix: &mut CellMatrix,
+    map: &mut Map,
     room_min: (u16, u16),
     room_max: (u16, u16),
     margins: (u8, u8),
     iterations: u32,
     shape: MapShape,
-) -> Vec<Room> {
-    let mut room_vector: Vec<Room> = vec![];
+) {
     for _ in 0..iterations {
         let room_width = thread_rng().gen_range(room_min.0, room_max.0 + 1);
         let room_height = thread_rng().gen_range(room_min.1, room_max.1 + 1);
 
         let (x, y) = match shape {
             MapShape::Square => (
-                thread_rng().gen_range(0, cell_matrix.width - room_width),
-                thread_rng().gen_range(0, cell_matrix.height - room_height),
+                thread_rng().gen_range(0, map.width - room_width),
+                thread_rng().gen_range(0, map.height - room_height),
             ),
             MapShape::Circle => {
                 // TODO: why - 4?
-                let width = cell_matrix.width - 4;
-                let height = cell_matrix.height - 4;
+                let width = map.width - 4;
+                let height = map.height - 4;
 
                 let angle = thread_rng().gen::<f32>() * PI_2;
                 let mut rng = thread_rng();
@@ -61,20 +60,15 @@ pub fn generate_rooms(
             height: room_height,
             x,
             y,
-            section: Section::new(cell_matrix.new_section()),
+            section_id: map.new_section(),
         };
-        if !room_vector.iter().any(|r| r.collides_with(&room, margins)) {
-            room_vector.push(room);
-        }
-    }
-
-    // Add all the newly created rooms to the cell vector
-    for (idx, room) in room_vector.iter().enumerate() {
-        for x in room.x..(room.x + room.width) {
-            for y in room.y..(room.y + room.height) {
-                cell_matrix.set(x, y, Cell::Room(idx))
+        if !map.iter_rooms().any(|r| r.collides_with(&room, margins)) {
+            let idx = map.push_room(room);
+            for x_pos in x..(x + room_width) {
+                for y_pos in y..(y + room_height) {
+                    map.set(x_pos, y_pos, Cell::Room(idx))
+                }
             }
         }
     }
-    return room_vector;
 }
