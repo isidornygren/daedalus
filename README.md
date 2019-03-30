@@ -23,5 +23,6 @@ fn main() {
 - Remove deadends from corridors.
 - Add room shapes.
 - Expand map shapes to encapsulate corridors.
-- Clean up
-- Add minotaur
+- Add horisontal & vertical symmetry.
+- Clean up.
+- Add minotaur.
