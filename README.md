@@ -16,6 +16,9 @@ fn main() {
 }
 ```
 
+### Map gallery
+![1](example_images/1.bmp)![2](example_images/2.bmp)![3](example_images/3.bmp)![4](example_images/4.bmp)
+
 ### TODO _(in order of importance)_
 - Remove deadends from corridors.
 - Add room shapes.
