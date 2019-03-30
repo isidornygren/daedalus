@@ -121,7 +121,7 @@ impl SectionMerger {
                         .get_section_mut(x as i32 + self.margins.0 as i32, y.into())
                         .unwrap()
                         .add_connection(x, y, left_id, left_score.min(right_score), Direction::W);
-                    self.map.set(x, y, Cell::Rock(true, false));
+                    self.map.set(x, y, Cell::Rock);
                 }
                 let top = self
                     .map
@@ -160,11 +160,25 @@ impl SectionMerger {
                         .get_section_mut(x.into(), y as i32 + self.margins.1 as i32)
                         .unwrap()
                         .add_connection(x, y, top_id, top_score.min(bottom_score), Direction::N);
-                    self.map.set(x, y, Cell::Rock(false, true));
+                    self.map.set(x, y, Cell::Rock);
                 }
             }
         }
-        let mut used_connections: Vec<Connection> = vec![];
+        // Go through and mark all section as the same section and throw away
+        // unconnected sections
+        let unused_sections = self.find_unused_sections();
+        /*for (cell, x, y) in self.map.iter_enumerate() {
+            match self.map.get_cell_section(&cell) {
+                Some(section) => {
+                    if unused_sections.iter().any(|s| s == section) {
+                        self.map.set(x, y, Cell::Rock)
+                    }
+                }
+                None => {}
+            }
+        }*/
+        // Print connection corridors to map
+        /*let mut used_connections: Vec<Connection> = vec![];
         for section in self.map.section_vec.to_owned() {
             let best_connections = self.map.get_best_connections(&section);
             let mut cloned_connections = best_connections.clone();
@@ -191,15 +205,12 @@ impl SectionMerger {
                 }
             }
             used_connections.append(&mut cloned_connections);
-        }
-        // Go through and mark all section as the same section and throw away
-        // unconnected sections
-        self.find_unused_sections();
-        //TODO: throw away unconnected sections
+
+        }*/
         return self.map;
     }
 
-    fn find_unused_sections(&mut self) -> Vec<&Section> {
+    fn find_unused_sections(&mut self) -> Vec<Section> {
         let first_section = &self.map.section_vec[0];
         let id = first_section.get_id();
         let connections = self.map.get_best_connections(&first_section);
@@ -208,7 +219,7 @@ impl SectionMerger {
         let mut unconnected_vec = vec![];
         for section in &self.map.section_vec {
             if section.get_id() != id {
-                unconnected_vec.push(section);
+                unconnected_vec.push(section.clone());
             }
         }
         return unconnected_vec;
@@ -216,6 +227,26 @@ impl SectionMerger {
 
     fn iterate_connections(&mut self, connections: &Vec<Connection>, id: usize) {
         for connection in connections {
+            match connection.direction {
+                Direction::N | Direction::S => {
+                    self.map.set_rect(
+                        Cell::Connection,
+                        connection.x,
+                        connection.y,
+                        self.corridor_size.0 as u16,
+                        self.margins.1 as u16,
+                    );
+                }
+                Direction::W | Direction::E => {
+                    self.map.set_rect(
+                        Cell::Connection,
+                        connection.x,
+                        connection.y,
+                        self.margins.0 as u16,
+                        self.corridor_size.1 as u16,
+                    );
+                }
+            }
             if self.map.get_connection_section(&connection).get_id() != id {
                 self.map.get_connection_section_mut(&connection).set_id(id);
                 let connections = self

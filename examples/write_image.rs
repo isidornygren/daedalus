@@ -33,9 +33,9 @@ fn main() {
     let map = Generator::new()
         .room_size((4, 4), (16, 16))
         .size(64, 64)
-        .margins(1, 3)
+        .margins(3, 3)
         .corridor_size(2, 2)
-        .iterations(256)
+        .iterations(0)
         .corridor_errantness(0.8)
         .generate();
     let mut img = Image::new(map.width as u32, map.height as u32);

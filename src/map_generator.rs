@@ -80,7 +80,7 @@ impl Generator {
     }
     pub fn generate(self) -> Map {
         let options = self.options;
-        let mut map = Map::new(options.width, options.height, Cell::Rock(false, false));
+        let mut map = Map::new(options.width, options.height, Cell::Rock);
 
         generate_rooms(
             &mut map,

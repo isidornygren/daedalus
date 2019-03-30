@@ -4,9 +4,9 @@ use crate::sections::{Connection, Section};
 
 #[derive(Clone, PartialEq, Copy)]
 pub enum Cell {
-    Rock(bool, bool), // Rocks are the ceiling of the map
-    SolidRock,        // Solid rock are unbreakable rocks, e.g outside of the map
-    Wall,             // horizontal, vertical
+    Rock,      // Rocks are the ceiling of the map
+    SolidRock, // Solid rock are unbreakable rocks, e.g outside of the map
+    Wall,      // horizontal, vertical
     // Room contains the index of the room in the room vector.
     Room(usize),
     Corridor(usize),
@@ -29,7 +29,7 @@ impl Cell {
     }
     pub fn is_rock(&self) -> bool {
         match self {
-            Cell::Rock(_, _) => true,
+            Cell::Rock => true,
             _ => false,
         }
     }
@@ -38,7 +38,7 @@ impl Cell {
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Cell::Rock(_, _) => write!(f, "Rock"),
+            Cell::Rock => write!(f, "Rock"),
             Cell::SolidRock => write!(f, "SolidRock"),
             Cell::Wall => write!(f, "Wall"),
             Cell::Room(_) => write!(f, "Room"),
