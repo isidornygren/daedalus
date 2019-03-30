@@ -35,8 +35,8 @@ fn main() {
         .size(64, 64)
         .margins(3, 3)
         .corridor_size(2, 2)
-        .iterations(0)
-        .corridor_errantness(0.8)
+        .iterations(64)
+        .corridor_errantness(0.95)
         .generate();
     let mut img = Image::new(map.width as u32, map.height as u32);
 

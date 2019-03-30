@@ -36,8 +36,8 @@ pub fn generate_rooms(
 
         let (x, y) = match shape {
             MapShape::Square => (
-                thread_rng().gen_range(0, map.width - room_width),
-                thread_rng().gen_range(0, map.height - room_height),
+                thread_rng().gen_range(0, map.width - room_width + 1),
+                thread_rng().gen_range(0, map.height - room_height + 1),
             ),
             MapShape::Circle => {
                 // TODO: why - 4?
