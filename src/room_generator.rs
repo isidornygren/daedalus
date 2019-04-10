@@ -22,6 +22,41 @@ fn is_within_circle_shape(a: &Room, radius: u16) -> bool {
     return radius as i32 * radius as i32 >= dx * dx + dy * dy;
 }
 
+fn generate_symmetry(x: u16, y: u16, room: (u16, u16), symmetry: (bool, bool)) -> Vec<(u16, u16)> {
+    let mut clone_x, clone_y = false, false;
+    let mut x_new, y_new = x, y;
+    if symmetry.0 {
+        if x_new > width / 2 - room.0 {
+            // it has passed the point of no return and should
+            // henceforth be alone
+            x_new = width / 2 + room.0 / 2;
+        }else {
+            clone_x = true;
+        }
+    }
+    if symmetry.1 {
+        y_new = thread_rng().gen_range(0, height / 2 - room.1 / 2 + 1),
+        if y_new > height / 2 - room.1 {
+            // it has passed the point of no return and should
+            // henceforth be alone
+            y = height / 2 + room.1 / 2;
+        }else{
+            clone_y = true;
+        }
+    }
+    let mut coordinates = vec![(x_new, y_new)];
+    if clone_y {
+        coordinates.push(x_new, height - y_new - room.1);
+    }
+    if clone_x {
+        coordinates.push(width - x_new - room.0, y_new);
+    }
+    if clone_x && clone_y {
+        coordinates.push(width - x_new - room.0, height - y_new - room.1);
+    }
+    return coordinates;
+}
+
 pub fn generate_rooms(
     map: &mut Map,
     room_min: (u16, u16),
@@ -29,6 +64,8 @@ pub fn generate_rooms(
     margins: (u8, u8),
     iterations: u32,
     shape: MapShape,
+    // (x-symmetry, y-symmetry)
+    symmetry: (bool, bool)
 ) {
     for _ in 0..iterations {
         let room_width = thread_rng().gen_range(room_min.0, room_max.0 + 1);
@@ -55,6 +92,16 @@ pub fn generate_rooms(
             }
         };
 
+        let coordinates = generate_symmetry(x, y, (room_width, room_height), symmetry);
+
+        let mut rooms = coordinates.iter().map(|c| Room {
+            width: room_width,
+            height : room_height,
+            x: c.0,
+            y: c.1,
+            section_id: 0,
+        })
+
         let room = Room {
             width: room_width,
             height: room_height,
@@ -63,6 +110,7 @@ pub fn generate_rooms(
             section_id: map.new_section(),
         };
         if !map.iter_rooms().any(|r| r.collides_with(&room, margins)) {
+            // add section id to room
             let idx = map.push_room(room);
             for x_pos in x..(x + room_width) {
                 for y_pos in y..(y + room_height) {
