@@ -1,3 +1,4 @@
+use crate::corridor_tree::WrappedCorridorNode;
 use crate::direction::Direction;
 use crate::room::{Corridor, Room};
 use crate::sections::{Connection, Section};
@@ -55,6 +56,7 @@ pub struct Map {
     pub height: u16,
     room_vec: Vec<Room>,
     corridor_vec: Vec<Corridor>,
+    pub corridor_tree: Vec<WrappedCorridorNode>,
     pub section_vec: Vec<Section>,
 }
 
@@ -69,6 +71,7 @@ impl Map {
             room_vec: vec![],
             corridor_vec: vec![],
             section_vec: vec![],
+            corridor_tree: vec![],
         };
     }
     pub fn iter_enumerate(&self) -> Vec<(Cell, u16, u16)> {
@@ -189,9 +192,43 @@ impl Map {
         for pos_y in y..(y + height as i32) {
             for pos_x in x..(x + width as i32) {
                 match func(&self.get(pos_x, pos_y)) {
-                    Some(x) => return Some(x),
+                    Some(a) => return Some(a),
                     _ => {}
                 }
+            }
+        }
+        return None;
+    }
+
+    pub fn rect_border_is<F, T>(
+        &self,
+        x: i32,
+        y: i32,
+        width: u16,
+        height: u16,
+        func: F,
+    ) -> Option<T>
+    where
+        F: Fn(&Cell) -> Option<T>,
+    {
+        for pos_y in y..(y + height as i32) {
+            match func(&self.get(x, pos_y)) {
+                Some(a) => return Some(a),
+                _ => {}
+            }
+            match func(&self.get(x + width as i32, pos_y)) {
+                Some(a) => return Some(a),
+                _ => {}
+            }
+        }
+        for pos_x in x..(x + width as i32) {
+            match func(&self.get(pos_x, y)) {
+                Some(a) => return Some(a),
+                _ => {}
+            }
+            match func(&self.get(pos_x, y + height as i32)) {
+                Some(a) => return Some(a),
+                _ => {}
             }
         }
         return None;

@@ -1,4 +1,5 @@
 use crate::cell_matrix::{Cell, Map};
+use crate::corridor_tree::{remove_node, WrappedCorridorNode};
 use crate::direction::Direction;
 use crate::room::Room;
 
@@ -167,46 +168,10 @@ impl SectionMerger {
         // Go through and mark all section as the same section and throw away
         // unconnected sections
         let unused_sections = self.find_unused_sections();
-        /*for (cell, x, y) in self.map.iter_enumerate() {
-            match self.map.get_cell_section(&cell) {
-                Some(section) => {
-                    if unused_sections.iter().any(|s| s == section) {
-                        self.map.set(x, y, Cell::Rock)
-                    }
-                }
-                None => {}
-            }
-        }*/
-        // Print connection corridors to map
-        /*let mut used_connections: Vec<Connection> = vec![];
-        for section in self.map.section_vec.to_owned() {
-            let best_connections = self.map.get_best_connections(&section);
-            let mut cloned_connections = best_connections.clone();
-            for connection in best_connections {
-                match connection.direction {
-                    Direction::N | Direction::S => {
-                        self.map.set_rect(
-                            Cell::Connection,
-                            connection.x,
-                            connection.y,
-                            self.corridor_size.0 as u16,
-                            self.margins.1 as u16,
-                        );
-                    }
-                    Direction::W | Direction::E => {
-                        self.map.set_rect(
-                            Cell::Connection,
-                            connection.x,
-                            connection.y,
-                            self.margins.0 as u16,
-                            self.corridor_size.1 as u16,
-                        );
-                    }
-                }
-            }
-            used_connections.append(&mut cloned_connections);
-
-        }*/
+        // Prune corridor tree
+        for root_node in self.map.corridor_tree.clone() {
+            self.iterate_node(&root_node, 100);
+        }
         return self.map;
     }
 
@@ -299,6 +264,93 @@ impl SectionMerger {
                     .abs()
                     / (room.height as f32 / 2f32))
                 .max(0f32)
+        }
+    }
+
+    fn iterate_node(&mut self, node: &WrappedCorridorNode, count: u32) {
+        let children = &node.borrow().children.clone();
+        if node.borrow().children.len() > 1 {
+            // There's a branching in the tree
+            // Mark this as a branch.
+            for child in children {
+                self.iterate_node(&child, 0);
+            }
+        }
+        if node.borrow().children.len() == 1 {
+            // it's a continuation of the branch
+            self.iterate_node(&children[0], count + 1)
+        }
+        if node.borrow().children.len() == 0 {
+            // it's a leaf
+            if count < 10 {
+                // Check if there's any connections surrounding it
+                match self.map.rect_border_is(
+                    node.borrow().x as i32 - 1,
+                    node.borrow().y as i32 - 1,
+                    self.corridor_size.0 as u16 + 2,
+                    self.corridor_size.1 as u16 + 2,
+                    |c| match c {
+                        Cell::Connection => Some(true),
+                        _ => None,
+                    },
+                ) {
+                    Some(_) => {}
+                    _ => {
+                        // There is no connection surrounding it
+                        match &node.borrow().parent {
+                            Some(parent) => {
+                                match (
+                                    parent.borrow().x as i32 - (node.borrow().x as i32),
+                                    parent.borrow().y as i32 - (node.borrow().y as i32),
+                                ) {
+                                    (x, _) if (x < 0) => {
+                                        // parent is to the left
+                                        self.map.set_rect(
+                                            Cell::Wall,
+                                            node.borrow().x + 1,
+                                            node.borrow().y,
+                                            1,
+                                            1, // self.corridor_size.1 as u16,
+                                        );
+                                    }
+                                    (x, _) if (x > 0) => {
+                                        // parent is to the right
+                                        self.map.set_rect(
+                                            Cell::Wall,
+                                            node.borrow().x,
+                                            node.borrow().y,
+                                            1,
+                                            1, // self.corridor_size.1 as u16,
+                                        );
+                                    }
+                                    (_, y) if (y < 0) => {
+                                        // parent is to the top
+                                        self.map.set_rect(
+                                            Cell::Wall,
+                                            node.borrow().x,
+                                            node.borrow().y + 1,
+                                            1, // self.corridor_size.0 as u16,
+                                            1,
+                                        );
+                                    }
+                                    _ => {
+                                        // parent is at the bottom
+                                        self.map.set_rect(
+                                            Cell::Wall,
+                                            node.borrow().x,
+                                            node.borrow().y,
+                                            1, // self.corridor_size.0 as u16,
+                                            1,
+                                        );
+                                    }
+                                }
+                                remove_node(node);
+                            }
+                            None => {}
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 use crate::cell_matrix::{Cell, Map};
+use crate::corridor_tree::{remove_node, CorridorNode, WrappedCorridorNode};
 use crate::room::Corridor;
 use crate::sections::Section;
 
@@ -36,16 +37,35 @@ impl LabyrinthGenerator {
     }
     pub fn generate(mut self) -> Map {
         // let mut corridor_vector: Vec<Corridor> = vec![];
+        let mut root_nodes: Vec<WrappedCorridorNode> = vec![];
         'suitable: loop {
             match self.find_suitable_corridor_location() {
                 Ok((x, y)) => {
                     let idx = self.map.add_corridor();
-                    self.traverse_corridor(x, y, Direction::rand(), idx);
+                    root_nodes.push(self.traverse_corridor(x, y, Direction::rand(), idx, None));
                 }
                 Err(_) => break 'suitable,
             };
         }
+        // print tree
+        for root_node in root_nodes.clone() {
+            println!("--------------------------------");
+            print!("({}, {})\n", root_node.borrow().x, root_node.borrow().y);
+            self.print_tree_children(&root_node);
+        }
+        // Remove all corridors that are too small
+        // self.prune_node_tree(root_nodes);
+        self.map.corridor_tree = root_nodes;
         return self.map;
+    }
+
+    fn print_tree_children(&self, node: &WrappedCorridorNode) {
+        for child in &node.borrow().children {
+            println!("˅˅˅˅˅˅˅˅˅˅˅˅˅˅˅˅");
+            print!("Child({}, {}) ", child.borrow().x, child.borrow().y);
+            self.print_tree_children(child);
+            println!("˄˄˄˄˄˄˄˄˄˄˄˄˄˄˄˄");
+        }
     }
 
     fn find_suitable_corridor_location(&mut self) -> Result<(u16, u16), String> {
@@ -79,6 +99,22 @@ impl LabyrinthGenerator {
         ));
     }
 
+    fn add_corridor_piece(
+        &mut self,
+        cell: Cell,
+        x: u16,
+        y: u16,
+        parent: Option<&WrappedCorridorNode>,
+    ) -> WrappedCorridorNode {
+        self.map.set_rect(
+            cell,
+            x,
+            y,
+            self.corridor_width as u16,
+            self.corridor_height as u16,
+        );
+        return CorridorNode::new(parent, x, y);
+    }
     /**
      * Recursive corridor logic
      */
@@ -89,20 +125,15 @@ impl LabyrinthGenerator {
         // horizontal / vertical
         direction: Direction,
         corridor_index: usize,
-    ) {
+        parent: Option<&WrappedCorridorNode>,
+    ) -> WrappedCorridorNode {
         let mut direction = match thread_rng().gen::<f32>() {
             x if x > self.corridor_errantness => Direction::rand(),
             _ => direction,
         };
         // Start the labyrinth algorithm here
         // This just sets a corridor piece at the starting location
-        self.map.set_rect(
-            Cell::Corridor(corridor_index),
-            x as u16,
-            y as u16,
-            self.corridor_width as u16,
-            self.corridor_height as u16,
-        );
+        let node = self.add_corridor_piece(Cell::Corridor(corridor_index), x, y, parent);
 
         let mut direction_pool = vec![Direction::E, Direction::N, Direction::S, Direction::W];
         for _ in 0..3 {
@@ -116,7 +147,13 @@ impl LabyrinthGenerator {
                         1,
                         (self.margins.0, self.margins.1, self.margins.0, 0),
                     ) {
-                        self.traverse_corridor(x, y - 1, direction.clone(), corridor_index);
+                        self.traverse_corridor(
+                            x,
+                            y - 1,
+                            direction.clone(),
+                            corridor_index,
+                            Some(&node),
+                        );
                     }
                 }
                 Direction::E => {
@@ -129,7 +166,13 @@ impl LabyrinthGenerator {
                         self.corridor_height,
                         (0, self.margins.1, self.margins.0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x + 1, y, direction.clone(), corridor_index);
+                        self.traverse_corridor(
+                            x + 1,
+                            y,
+                            direction.clone(),
+                            corridor_index,
+                            Some(&node),
+                        );
                     }
                 }
                 Direction::S => {
@@ -142,7 +185,13 @@ impl LabyrinthGenerator {
                         1,
                         (self.margins.0, 0, self.margins.0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x, y + 1, direction.clone(), corridor_index);
+                        self.traverse_corridor(
+                            x,
+                            y + 1,
+                            direction.clone(),
+                            corridor_index,
+                            Some(&node),
+                        );
                     }
                 }
                 Direction::W => {
@@ -154,7 +203,13 @@ impl LabyrinthGenerator {
                         self.corridor_height,
                         (self.margins.0, self.margins.1, 0, self.margins.1),
                     ) {
-                        self.traverse_corridor(x - 1, y, direction.clone(), corridor_index);
+                        self.traverse_corridor(
+                            x - 1,
+                            y,
+                            direction.clone(),
+                            corridor_index,
+                            Some(&node),
+                        );
                     }
                 }
             }
@@ -166,6 +221,7 @@ impl LabyrinthGenerator {
                 direction = direction_pool[self.rng.gen_range(0, direction_pool.len()) as usize];
             }
         }
+        return node;
     }
 }
 
