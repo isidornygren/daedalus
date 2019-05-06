@@ -13,6 +13,7 @@ pub enum Cell {
     Corridor(usize),
     Perimeter(u8), // how close it is to a wall
     Connection,
+    Removed, // Debug cell
 }
 
 impl Cell {
@@ -46,6 +47,7 @@ impl std::fmt::Display for Cell {
             Cell::Corridor(_) => write!(f, "Corridor"),
             Cell::Perimeter(_) => write!(f, "Perimeter"),
             Cell::Connection => write!(f, "Connection"),
+            Cell::Removed => write!(f, "Removed"),
         }
     }
 }

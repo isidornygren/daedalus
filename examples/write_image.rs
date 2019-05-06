@@ -29,6 +29,7 @@ fn get_section_color(section: u16) -> Pixel {
 fn main() {
     let wall_pixel: Pixel = Pixel::new(125, 125, 125);
     let connection_pixel: Pixel = Pixel::new(64, 255, 64);
+    let removed_pixel: Pixel = Pixel::new(64, 0, 0);
 
     let map = Generator::new()
         .room_size((4, 4), (16, 16))
@@ -56,11 +57,7 @@ fn main() {
                     map.section_vec[map.get_corridor(idx).section_id].get_id() as u16 * 32,
                 ),
             ),
-            /*Cell::Rock(h, v) => img.set_pixel(
-                x.into(),
-                y.into(),
-                Pixel::new(if h { 255 } else { 100 }, 100, if v { 255 } else { 100 }),
-            ),*/
+            Cell::Removed => img.set_pixel(x.into(), y.into(), removed_pixel),
             Cell::Connection => img.set_pixel(x.into(), y.into(), connection_pixel),
             _ => img.set_pixel(x.into(), y.into(), wall_pixel),
         };

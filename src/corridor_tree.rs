@@ -1,10 +1,11 @@
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 pub type WrappedCorridorNode = Rc<RefCell<CorridorNode>>;
+type WeakWrappedCorridorNode = Weak<RefCell<CorridorNode>>;
 
 pub struct CorridorNode {
-    pub parent: Option<WrappedCorridorNode>,
+    pub parent: Option<WeakWrappedCorridorNode>,
     pub children: Vec<WrappedCorridorNode>,
     pub x: u16,
     pub y: u16,
@@ -16,28 +17,26 @@ impl PartialEq for CorridorNode {
     }
 }
 
-pub fn set_parent(node: &WrappedCorridorNode, parent: &WrappedCorridorNode) {
-    node.borrow_mut().parent = Some(Rc::clone(parent));
+pub fn set_parent(parent: &WrappedCorridorNode, child: &WrappedCorridorNode) {
+    child.borrow_mut().parent = Some(Rc::downgrade(parent));
 }
 
-pub fn add_child(node: &WrappedCorridorNode, child: &WrappedCorridorNode) {
-    set_parent(node, child);
-    node.borrow_mut().children.push(Rc::clone(child));
+pub fn add_child(parent: &WrappedCorridorNode, child: &WrappedCorridorNode) {
+    set_parent(parent, child);
+    parent.borrow_mut().children.push(Rc::clone(child));
 }
 
 pub fn get_parent(node: &WrappedCorridorNode) -> Option<WrappedCorridorNode> {
     let parent = &node.borrow().parent;
     match parent {
-        Some(p) => Some(Rc::clone(p)),
+        Some(p) => p.upgrade(),
         None => None,
     }
 }
 
 pub fn remove_node(node: &WrappedCorridorNode) {
-    let parent = get_parent(node);
-    if parent.is_some() {
+    if let Some(parent) = get_parent(node) {
         parent
-            .unwrap()
             .borrow_mut()
             .children
             .retain(|n| *n.borrow() != *node.borrow())
@@ -47,17 +46,13 @@ pub fn remove_node(node: &WrappedCorridorNode) {
 impl CorridorNode {
     pub fn new(parent: Option<&WrappedCorridorNode>, x: u16, y: u16) -> WrappedCorridorNode {
         let node = Rc::new(RefCell::new(CorridorNode {
-            parent: if parent.is_some() {
-                Some(Rc::clone(parent.unwrap()))
-            } else {
-                None
-            },
+            parent: None,
             children: vec![],
             x,
             y,
         }));
-        if parent.is_some() {
-            add_child(&parent.unwrap(), &node)
+        if let Some(p) = parent {
+            add_child(&p, &node)
         }
         return node;
     }

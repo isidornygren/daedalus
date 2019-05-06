@@ -48,11 +48,11 @@ impl LabyrinthGenerator {
             };
         }
         // print tree
-        for root_node in root_nodes.clone() {
+        /* for root_node in root_nodes.clone() {
             println!("--------------------------------");
             print!("({}, {})\n", root_node.borrow().x, root_node.borrow().y);
             self.print_tree_children(&root_node);
-        }
+        }*/
         // Remove all corridors that are too small
         // self.prune_node_tree(root_nodes);
         self.map.corridor_tree = root_nodes;
@@ -215,7 +215,7 @@ impl LabyrinthGenerator {
             }
             let idx = direction_pool.iter().position(|d| *d == direction).unwrap();
             direction_pool.remove(idx);
-            if (direction_pool.len() == 1) {
+            if direction_pool.len() == 1 {
                 direction = direction_pool[0];
             } else {
                 direction = direction_pool[self.rng.gen_range(0, direction_pool.len()) as usize];

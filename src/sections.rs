@@ -1,5 +1,5 @@
 use crate::cell_matrix::{Cell, Map};
-use crate::corridor_tree::{remove_node, WrappedCorridorNode};
+use crate::corridor_tree::{get_parent, remove_node, WrappedCorridorNode};
 use crate::direction::Direction;
 use crate::room::Room;
 
@@ -269,6 +269,7 @@ impl SectionMerger {
 
     fn iterate_node(&mut self, node: &WrappedCorridorNode, count: u32) {
         let children = &node.borrow().children.clone();
+
         if node.borrow().children.len() > 1 {
             // There's a branching in the tree
             // Mark this as a branch.
@@ -282,13 +283,13 @@ impl SectionMerger {
         }
         if node.borrow().children.len() == 0 {
             // it's a leaf
-            if count < 10 {
+            if count < 3 {
                 // Check if there's any connections surrounding it
                 match self.map.rect_border_is(
                     node.borrow().x as i32 - 1,
                     node.borrow().y as i32 - 1,
-                    self.corridor_size.0 as u16 + 2,
-                    self.corridor_size.1 as u16 + 2,
+                    self.corridor_size.0 as u16 + 1,
+                    self.corridor_size.1 as u16 + 1,
                     |c| match c {
                         Cell::Connection => Some(true),
                         _ => None,
@@ -297,7 +298,7 @@ impl SectionMerger {
                     Some(_) => {}
                     _ => {
                         // There is no connection surrounding it
-                        match &node.borrow().parent {
+                        match get_parent(&node) {
                             Some(parent) => {
                                 match (
                                     parent.borrow().x as i32 - (node.borrow().x as i32),
@@ -306,40 +307,40 @@ impl SectionMerger {
                                     (x, _) if (x < 0) => {
                                         // parent is to the left
                                         self.map.set_rect(
-                                            Cell::Wall,
+                                            Cell::Removed, // Wall
                                             node.borrow().x + 1,
                                             node.borrow().y,
                                             1,
-                                            1, // self.corridor_size.1 as u16,
+                                            self.corridor_size.1 as u16,
                                         );
                                     }
                                     (x, _) if (x > 0) => {
                                         // parent is to the right
                                         self.map.set_rect(
-                                            Cell::Wall,
+                                            Cell::Removed, // Wall
                                             node.borrow().x,
                                             node.borrow().y,
                                             1,
-                                            1, // self.corridor_size.1 as u16,
+                                            self.corridor_size.1 as u16,
                                         );
                                     }
                                     (_, y) if (y < 0) => {
                                         // parent is to the top
                                         self.map.set_rect(
-                                            Cell::Wall,
+                                            Cell::Removed, // Wall
                                             node.borrow().x,
                                             node.borrow().y + 1,
-                                            1, // self.corridor_size.0 as u16,
+                                            self.corridor_size.0 as u16,
                                             1,
                                         );
                                     }
                                     _ => {
                                         // parent is at the bottom
                                         self.map.set_rect(
-                                            Cell::Wall,
+                                            Cell::Removed, // Wall
                                             node.borrow().x,
                                             node.borrow().y,
-                                            1, // self.corridor_size.0 as u16,
+                                            self.corridor_size.0 as u16,
                                             1,
                                         );
                                     }
