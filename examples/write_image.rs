@@ -30,14 +30,15 @@ fn main() {
     let wall_pixel: Pixel = Pixel::new(125, 125, 125);
     let connection_pixel: Pixel = Pixel::new(64, 255, 64);
     let removed_pixel: Pixel = Pixel::new(64, 0, 0);
+    let solid_wall_pixel: Pixel = Pixel::new(0, 0, 0);
 
     let map = Generator::new()
         .room_size((4, 4), (16, 16))
         .size(64, 64)
-        .margins(1, 1)
+        .margins(1, 3)
         .corridor_size(2, 2)
-        .iterations(0)
-        .corridor_errantness(0.75)
+        .iterations(32)
+        .corridor_errantness(0.9)
         .generate();
     let mut img = Image::new(map.width as u32, map.height as u32);
 
@@ -59,6 +60,7 @@ fn main() {
             ),
             Cell::Removed => img.set_pixel(x.into(), y.into(), removed_pixel),
             Cell::Connection => img.set_pixel(x.into(), y.into(), connection_pixel),
+            Cell::SolidRock => img.set_pixel(x.into(), y.into(), solid_wall_pixel),
             _ => img.set_pixel(x.into(), y.into(), wall_pixel),
         };
     }

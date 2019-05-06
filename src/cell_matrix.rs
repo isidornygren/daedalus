@@ -187,16 +187,28 @@ impl Map {
         return cell_matrix_rect;
     }
 
-    pub fn rect_is<F, T>(&self, x: i32, y: i32, width: u16, height: u16, func: F) -> Option<T>
+    pub fn rect_is<F>(&self, x: i32, y: i32, width: u16, height: u16, func: F) -> Option<Cell>
     where
-        F: Fn(&Cell) -> Option<T>,
+        F: Fn(&Cell) -> bool,
     {
         for pos_y in y..(y + height as i32) {
             for pos_x in x..(x + width as i32) {
-                match func(&self.get(pos_x, pos_y)) {
-                    Some(a) => return Some(a),
-                    _ => {}
+                if func(&self.get(pos_x, pos_y)) {
+                    return Some(*self.get(pos_y, pos_y));
                 }
+            }
+        }
+        return None;
+    }
+
+    pub fn check_cells<F, T>(&self, coords: Vec<(i32, i32)>, func: F) -> Option<T>
+    where
+        F: Fn(&Cell) -> Option<T>,
+    {
+        for coord in coords {
+            match func(&self.get(coord.0, coord.1)) {
+                Some(a) => return Some(a),
+                _ => {}
             }
         }
         return None;

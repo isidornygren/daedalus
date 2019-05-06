@@ -62,11 +62,26 @@ pub fn generate_rooms(
             y,
             section_id: map.new_section(),
         };
-        if !map.iter_rooms().any(|r| r.collides_with(&room, margins)) {
-            let idx = map.push_room(room);
-            for x_pos in x..(x + room_width) {
-                for y_pos in y..(y + room_height) {
-                    map.set(x_pos, y_pos, Cell::Room(idx))
+        // Check that the room doesn't collide with another room object by object
+        // This implementation is used as we _could_ check it room per room,
+        // but then other cells couldn't block future rooms.
+        // And when the room sizes are small enough, it doesn't make that
+        // big of a difference
+        match map.rect_is(
+            x as i32 - margins.0 as i32,
+            y as i32 - margins.1 as i32,
+            room_width + (margins.0 * 2) as u16,
+            room_height + (margins.1 * 2) as u16,
+            |c| *c != Cell::Rock,
+        ) {
+            Some(_) => {}
+            _ => {
+                // Nothing of note at the rooms location, put it there
+                let idx = map.push_room(room);
+                for x_pos in x..(x + room_width) {
+                    for y_pos in y..(y + room_height) {
+                        map.set(x_pos, y_pos, Cell::Room(idx))
+                    }
                 }
             }
         }

@@ -80,7 +80,23 @@ impl Generator {
     }
     pub fn generate(self) -> Map {
         let options = self.options;
-        let mut map = Map::new(options.width, options.height, Cell::Rock);
+        let mut map = Map::new(options.width, options.height, Cell::SolidRock);
+
+        // Fill the map with some Rocks as SolidRocks are unbreakable
+        for y in 0..map.height {
+            for x in 0..map.width {
+                // if cell is inside oval
+                let r_x = map.width as f32 / 2f32;
+                let r_y = map.height as f32 / 2f32;
+                let r_x_2 = r_x.powf(2f32);
+                let r_y_2 = r_y.powf(2f32);
+                if ((x as f32 - r_x).powf(2f32) / r_x_2) + ((y as f32 - r_y).powf(2f32) / r_y_2)
+                    <= 1f32
+                {
+                    map.set(x, y, Cell::Rock)
+                }
+            }
+        }
 
         generate_rooms(
             &mut map,

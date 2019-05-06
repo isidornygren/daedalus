@@ -167,7 +167,7 @@ impl SectionMerger {
         }
         // Go through and mark all section as the same section and throw away
         // unconnected sections
-        let unused_sections = self.find_unused_sections();
+        let unused_sections = self.connect_sections();
         // Prune corridor tree
         for root_node in self.map.corridor_tree.clone() {
             self.iterate_node(&root_node, 100);
@@ -175,11 +175,36 @@ impl SectionMerger {
         return self.map;
     }
 
-    fn find_unused_sections(&mut self) -> Vec<Section> {
+    fn connect_sections(&mut self) -> usize {
         let first_section = &self.map.section_vec[0];
         let id = first_section.get_id();
         let connections = self.map.get_best_connections(&first_section);
-        self.iterate_connections(&connections, id);
+        let mut counted_connections = self.iterate_connections(&connections, id);
+
+        // If the first section couldn't connect enough
+        // then select the next id until we've found the best section
+        let mut prev_id = Some(id);
+        // top section is the amount of found connections,
+        // and the id of the section (id, connections)
+        let mut top_section = (id, counted_connections);
+        while (counted_connections as usize) < self.map.section_vec.len() / 2 && prev_id.is_some() {
+            let option_next_section = self
+                .map
+                .section_vec
+                .iter()
+                .find(|section| Some(section.get_id()) > prev_id);
+            if let Some(next_section) = option_next_section {
+                let next_connections = self.map.get_best_connections(&next_section);
+                prev_id = Some(next_section.get_id());
+                counted_connections = self.iterate_connections(&next_connections, id);
+                if counted_connections > top_section.1 {
+                    top_section = (prev_id.unwrap(), counted_connections);
+                }
+            } else {
+                // break the loop
+                prev_id = None;
+            }
+        }
         // Check for unconnected sections
         let mut unconnected_vec = vec![];
         for section in &self.map.section_vec {
@@ -187,10 +212,15 @@ impl SectionMerger {
                 unconnected_vec.push(section.clone());
             }
         }
-        return unconnected_vec;
+        // Returns the ID of the best section
+        return top_section.0;
     }
 
-    fn iterate_connections(&mut self, connections: &Vec<Connection>, id: usize) {
+    /**
+     * Returns how many connections have been connected
+     */
+    fn iterate_connections(&mut self, connections: &Vec<Connection>, id: usize) -> u32 {
+        let mut counted_connections = 0;
         for connection in connections {
             match connection.direction {
                 Direction::N | Direction::S => {
@@ -213,13 +243,15 @@ impl SectionMerger {
                 }
             }
             if self.map.get_connection_section(&connection).get_id() != id {
+                counted_connections += 1;
                 self.map.get_connection_section_mut(&connection).set_id(id);
                 let connections = self
                     .map
                     .get_best_connections(self.map.get_connection_section(connection));
-                self.iterate_connections(&connections, id)
+                counted_connections += self.iterate_connections(&connections, id);
             }
         }
+        return counted_connections;
     }
 
     fn score_pos(&self, x: i32, y: i32, horizontal: bool) -> f32 {
@@ -237,13 +269,9 @@ impl SectionMerger {
             y,
             self.corridor_size.0 as u16,
             self.corridor_size.1 as u16,
-            |c| match self.map.get_cell_section(c) {
-                Some(s) if s != section => Some(false),
-                Some(s) if s == section => None,
-                _ => Some(false),
-            },
+            |c| self.map.get_cell_section(c) != Some(section),
         ) {
-            Some(x) => return x,
+            Some(_) => return false,
             None => {}
         }
         return true;
@@ -283,13 +311,24 @@ impl SectionMerger {
         }
         if node.borrow().children.len() == 0 {
             // it's a leaf
-            if count < 3 {
+            if count < 1000 {
                 // Check if there's any connections surrounding it
-                match self.map.rect_border_is(
-                    node.borrow().x as i32 - 1,
-                    node.borrow().y as i32 - 1,
-                    self.corridor_size.0 as u16 + 1,
-                    self.corridor_size.1 as u16 + 1,
+                let borrowed_node = node.borrow();
+                // TODO: Could check for special cases for North, West, East and South here
+                // But it won't add that much to the dungeon so maybe for the future
+                match self.map.check_cells(
+                    vec![
+                        ((borrowed_node.x) as i32, borrowed_node.y as i32 - 1),
+                        (borrowed_node.x as i32 - 1, (borrowed_node.y) as i32),
+                        (
+                            (borrowed_node.x) as i32,
+                            (borrowed_node.y + self.corridor_size.1 as u16) as i32,
+                        ),
+                        (
+                            (borrowed_node.x + self.corridor_size.0 as u16) as i32,
+                            borrowed_node.y as i32,
+                        ),
+                    ],
                     |c| match c {
                         Cell::Connection => Some(true),
                         _ => None,
