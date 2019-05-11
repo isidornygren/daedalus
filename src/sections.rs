@@ -71,14 +71,16 @@ pub struct SectionMerger {
     map: Map,
     margins: (u8, u8),
     corridor_size: (u8, u8),
+    prune_length: u32,
 }
 
 impl SectionMerger {
-    pub fn new(map: Map, margins: (u8, u8), corridor_size: (u8, u8)) -> Self {
+    pub fn new(map: Map, margins: (u8, u8), corridor_size: (u8, u8), prune_length: u32) -> Self {
         return SectionMerger {
             map,
             margins,
             corridor_size,
+            prune_length,
         };
     }
     pub fn generate(mut self) -> Map {
@@ -161,13 +163,12 @@ impl SectionMerger {
                         .get_section_mut(x.into(), y as i32 + self.margins.1 as i32)
                         .unwrap()
                         .add_connection(x, y, top_id, top_score.min(bottom_score), Direction::N);
-                    self.map.set(x, y, Cell::Rock);
                 }
             }
         }
         // Go through and mark all section as the same section and throw away
         // unconnected sections
-        let unused_sections = self.connect_sections();
+        let best_section_id = self.connect_sections();
         // Prune corridor tree
         for root_node in self.map.corridor_tree.clone() {
             self.iterate_node(&root_node, 100);
@@ -222,6 +223,8 @@ impl SectionMerger {
     fn iterate_connections(&mut self, connections: &Vec<Connection>, id: usize) -> u32 {
         let mut counted_connections = 0;
         for connection in connections {
+            // if the connection is from a corridor to
+            // another corridor
             match connection.direction {
                 Direction::N | Direction::S => {
                     self.map.set_rect(
@@ -311,7 +314,7 @@ impl SectionMerger {
         }
         if node.borrow().children.len() == 0 {
             // it's a leaf
-            if count < 1000 {
+            if count < self.prune_length {
                 // Check if there's any connections surrounding it
                 let borrowed_node = node.borrow();
                 // TODO: Could check for special cases for North, West, East and South here

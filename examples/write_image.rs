@@ -33,12 +33,13 @@ fn main() {
     let solid_wall_pixel: Pixel = Pixel::new(0, 0, 0);
 
     let map = Generator::new()
-        .room_size((4, 4), (16, 16))
+        .room_size((8, 8), (16, 16))
         .size(64, 64)
-        .margins(1, 3)
+        .margins(1, 1)
         .corridor_size(2, 2)
-        .iterations(32)
-        .corridor_errantness(0.9)
+        .iterations(256)
+        .corridor_errantness(0.95)
+        .prune_length(64)
         .generate();
     let mut img = Image::new(map.width as u32, map.height as u32);
 

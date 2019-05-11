@@ -6,6 +6,7 @@ use crate::sections::SectionMerger;
 pub enum MapShape {
     Square,
     Circle,
+    Custom(&'static FnOnce() -> String),
 }
 
 pub struct GeneratorOptions {
@@ -26,6 +27,8 @@ pub struct GeneratorOptions {
     pub margins: (u8, u8),
     // 0-1
     pub corridor_errantness: f32,
+    // How long a corridor has to be to be considered for pruning
+    pub prune_length: u32,
 }
 
 pub struct Generator {
@@ -46,12 +49,17 @@ impl Generator {
                 corridor_height: 2,
                 corridor_errantness: 0.75,
                 margins: (1, 3), // (x, y)
+                prune_length: 4,
             },
         };
     }
     pub fn size(mut self, width: u16, height: u16) -> Self {
         self.options.width = width;
         self.options.height = height;
+        return self;
+    }
+    pub fn shape(mut self, shape: MapShape) -> Self {
+        self.options.shape = shape;
         return self;
     }
     pub fn iterations(mut self, iterations: u32) -> Self {
@@ -76,6 +84,10 @@ impl Generator {
     }
     pub fn corridor_errantness(mut self, errantness: f32) -> Self {
         self.options.corridor_errantness = errantness;
+        return self;
+    }
+    pub fn prune_length(mut self, prune_length: u32) -> Self {
+        self.options.prune_length = prune_length;
         return self;
     }
     pub fn generate(self) -> Map {
@@ -120,6 +132,7 @@ impl Generator {
             map,
             options.margins,
             (options.corridor_width, options.corridor_height),
+            options.prune_length,
         )
         .generate();
     }
