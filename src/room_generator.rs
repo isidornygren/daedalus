@@ -35,10 +35,6 @@ pub fn generate_rooms(
         let room_height = thread_rng().gen_range(room_min.1, room_max.1 + 1);
 
         let (x, y) = match shape {
-            MapShape::Square => (
-                thread_rng().gen_range(0, map.width - room_width + 1),
-                thread_rng().gen_range(0, map.height - room_height + 1),
-            ),
             MapShape::Circle => {
                 // TODO: why - 4?
                 let width = map.width - 4;
@@ -53,6 +49,10 @@ pub fn generate_rooms(
                     (height as f32 / 2f32 + r_y * (angle.sin())).floor() as u16,
                 )
             }
+            _ => (
+                thread_rng().gen_range(0, map.width - room_width + 1),
+                thread_rng().gen_range(0, map.height - room_height + 1),
+            ),
         };
 
         let room = Room {
