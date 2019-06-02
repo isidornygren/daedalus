@@ -35,6 +35,14 @@ impl Cell {
             _ => false,
         }
     }
+    pub fn is_walkable(&self) -> bool {
+        match self {
+            Cell::Room(_) => true,
+            Cell::Corridor(_) => true,
+            Cell::Connection => true,
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for Cell {
